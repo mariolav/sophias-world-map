@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sophia's World Map - Family Explorer</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Fonts: Bubblegum Sans for friendly headers, Outfit for clean toddler legibility -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bubblegum+Sans&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- D3.js and TopoJSON for real world geographic projections -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+  <!-- Canvas Confetti for celebratory landing -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            bubble: ['"Bubblegum Sans"', 'cursive'],
+            sans: ['Outfit', 'sans-serif'],
+          },
+          colors: {
+            skyBlue: '#38bdf8',
+            oceanBlue: '#0284c7',
+            deepOcean: '#0369a1',
+            penarolYellow: '#facc15',
+            penarolBlack: '#18181b',
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    body {
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    .land-mass {
+      fill: #86efac;
+      stroke: #22c55e;
+      stroke-width: 0.6px;
+      transition: fill 0.2s ease, stroke 0.2s ease;
+      cursor: pointer;
+    }
+    .land-mass:hover {
+      fill: #4ade80;
+    }
+    .land-selected {
+      fill: #fde047 !important;
+      stroke: #ca8a04 !important;
+      stroke-width: 1.5px;
+    }
+
+    .ocean-bg {
+      fill: #bae6fd;
+    }
+
+    /* Graticule styling */
+    .graticule {
+      fill: none;
+      stroke: #7dd3fc;
+      stroke-width: 0.4px;
+      stroke-dasharray: 2, 4;
+      opacity: 0.7;
+    }
+
+    /* Flight Path Dash Animation */
+    @keyframes marchFlightPath {
+      to {
+        stroke-dashoffset: -40;
+      }
+    }
+    .flight-path-active {
+      stroke-dasharray: 6, 6;
+      animation: marchFlightPath 1.2s linear infinite;
+    }
+
+    /* Custom Scrollbar for photos */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-sky-50 text-slate-800 font-sans min-h-screen flex flex-col overflow-x-hidden">
+
+  <header class="bg-white/95 backdrop-blur shadow-sm border-b border-sky-100 px-4 py-2.5 sticky top-0 z-30 flex flex-wrap items-center justify-between gap-2">
+    <!-- Brand / Title -->
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-2xl bg-sky-500 text-white flex items-center justify-center shadow-md font-bubble text-2xl">
+        S
+      </div>
+      <div>
+        <h1 class="font-bubble text-xl sm:text-2xl text-sky-950 tracking-wide leading-tight">
+          Sophia's World Map
+        </h1>
+        <p class="text-xs font-semibold text-sky-600 uppercase tracking-wider">
+          Family Explorer
+        </p>
+      </div>
+    </div>
+
+    <!-- Active Status Banner / What Sophia is Doing -->
+    <div id="statusBanner" class="hidden md:flex items-center bg-sky-50 border border-sky-200 rounded-full px-4 py-1.5 text-sm font-semibold text-sky-800">
+      <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 animate-ping"></span>
+      <span id="statusText">Captain Sophia is ready at home in Canada!</span>
+    </div>
+
+    <!-- Header Actions -->
+    <div class="flex items-center gap-2">
+      <!-- Voice Toggle -->
+      <button id="voiceToggleBtn" onclick="toggleVoice()" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition shadow-sm" title="Toggle Voice narration">
+        <svg id="voiceIconOn" class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+        </svg>
+        <span id="voiceLabel">Voice: On</span>
+      </button>
+
+      <!-- Main Action: Fly Papi & Abuela to Greece -->
+      <button id="mainFlyBtn" onclick="flyTo('greece')" class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-2xl font-bold text-sm shadow-md transition transform active:scale-95">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+        </svg>
+        <span>Fly Papi & Abuela to Greece!</span>
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 flex flex-col relative w-full overflow-hidden p-2 sm:p-4">
+    <!-- Map Canvas Card -->
+    <div class="relative w-full flex-1 min-h-[460px] sm:min-h-[540px] max-h-[720px] bg-sky-200 rounded-3xl overflow-hidden shadow-inner border-4 border-white flex items-center justify-center">
+      
+      <!-- Interactive SVG Globe -->
+      <svg id="worldMapSvg" class="w-full h-full block cursor-grab active:cursor-grabbing"></svg>
+
+      <!-- Map Floating Zoom Controls -->
+      <div class="absolute top-4 right-4 flex flex-col gap-2 z-10 bg-white/90 backdrop-blur rounded-2xl p-1.5 shadow-md border border-sky-100">
+        <button onclick="manualZoom(1.3)" class="w-9 h-9 flex items-center justify-center rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 font-bold text-lg active:scale-90 transition" title="Zoom in">
+          +
+        </button>
+        <button onclick="manualZoom(0.77)" class="w-9 h-9 flex items-center justify-center rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 font-bold text-lg active:scale-90 transition" title="Zoom out">
+          &minus;
+        </button>
+        <button onclick="resetCameraZoom()" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold active:scale-90 transition" title="Reset View">
+          Reset
+        </button>
+      </div>
+
+      <!-- Quick Reset Flight Button (Visible in Focus Mode) -->
+      <button id="resetFlightBtn" onclick="restoreAllDestinations()" class="hidden absolute top-4 left-4 z-10 px-4 py-2 bg-white/95 hover:bg-white text-sky-900 rounded-2xl shadow-lg border border-sky-200 font-bold text-xs sm:text-sm flex items-center gap-2 active:scale-95 transition">
+        <svg class="w-4 h-4 text-sky-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        <span>Fly Somewhere Else!</span>
+      </button>
+
+      <!-- Active Destination Tap Banner -->
+      <div id="countryBanner" class="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 bg-white/95 backdrop-blur border border-sky-200 rounded-2xl px-5 py-2 shadow-lg hidden items-center gap-3">
+        <div id="countryBadgeCode" class="w-8 h-8 rounded-full bg-sky-500 text-white font-bold text-xs flex items-center justify-center">
+          --
+        </div>
+        <div>
+          <h4 id="countryBannerTitle" class="text-sm font-bold text-slate-800">Selected Country</h4>
+          <p id="countryBannerSubtitle" class="text-xs text-sky-600">Tap to fly Captain Sophia here!</p>
+        </div>
+        <button id="bannerFlyActionBtn" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold shadow transition active:scale-95">
+          Fly Here!
+        </button>
+      </div>
+    </div>
+
+    <div id="destinationBar" class="mt-3 w-full max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 transition-opacity duration-300">
+      
+      <!-- Canada (Home) -->
+      <div onclick="flyTo('canada')" class="bg-white rounded-2xl p-2.5 sm:p-3 border-2 border-red-200 hover:border-red-400 shadow-sm cursor-pointer transition transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-red-100 text-red-700 font-extrabold text-xs flex items-center justify-center shrink-0">
+          CA
+        </div>
+        <div class="overflow-hidden">
+          <h3 class="font-bold text-xs sm:text-sm text-slate-800 truncate">Canada</h3>
+          <p class="text-[11px] text-slate-500 truncate">Home for Sophia</p>
+        </div>
+      </div>
+
+      <!-- Greece (Vacation) -->
+      <div onclick="flyTo('greece')" class="bg-white rounded-2xl p-2.5 sm:p-3 border-2 border-blue-200 hover:border-blue-400 shadow-sm cursor-pointer transition transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 font-extrabold text-xs flex items-center justify-center shrink-0">
+          GR
+        </div>
+        <div class="overflow-hidden">
+          <h3 class="font-bold text-xs sm:text-sm text-slate-800 truncate">Greece</h3>
+          <p class="text-[11px] text-sky-600 font-semibold truncate">Papi & Abuela Vacation</p>
+        </div>
+      </div>
+
+      <!-- Uruguay -->
+      <div onclick="flyTo('uruguay')" class="bg-white rounded-2xl p-2.5 sm:p-3 border-2 border-yellow-200 hover:border-yellow-400 shadow-sm cursor-pointer transition transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-yellow-100 text-yellow-800 font-extrabold text-xs flex items-center justify-center shrink-0">
+          UY
+        </div>
+        <div class="overflow-hidden">
+          <h3 class="font-bold text-xs sm:text-sm text-slate-800 truncate">Uruguay</h3>
+          <p class="text-[11px] text-slate-500 truncate">Tía Carmen & Peñarol</p>
+        </div>
+      </div>
+
+      <!-- Texas -->
+      <div onclick="flyTo('dallas')" class="bg-white rounded-2xl p-2.5 sm:p-3 border-2 border-orange-200 hover:border-orange-400 shadow-sm cursor-pointer transition transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-orange-100 text-orange-800 font-extrabold text-xs flex items-center justify-center shrink-0">
+          TX
+        </div>
+        <div class="overflow-hidden">
+          <h3 class="font-bold text-xs sm:text-sm text-slate-800 truncate">Texas</h3>
+          <p class="text-[11px] text-slate-500 truncate">Nana Abu & Family</p>
+        </div>
+      </div>
+
+      <!-- Pakistan -->
+      <div onclick="flyTo('pakistan')" class="col-span-2 sm:col-span-1 bg-white rounded-2xl p-2.5 sm:p-3 border-2 border-emerald-200 hover:border-emerald-400 shadow-sm cursor-pointer transition transform hover:-translate-y-0.5 active:scale-95 flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 font-extrabold text-xs flex items-center justify-center shrink-0">
+          PK
+        </div>
+        <div class="overflow-hidden">
+          <h3 class="font-bold text-xs sm:text-sm text-slate-800 truncate">Pakistan</h3>
+          <p class="text-[11px] text-slate-500 truncate">Where Mommy was born</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Arrival Postcard Modal -->
+  <div id="postcardModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border-4 border-sky-100 relative transform transition-all scale-95 opacity-0 duration-300" id="postcardCard">
+      <!-- Close Button -->
+      <button onclick="closePostcard()" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-lg active:scale-90 transition">
+        &times;
+      </button>
+
+      <!-- Badge & Destination Header -->
+      <div class="flex items-center gap-3 mb-4">
+        <div id="postcardBadge" class="w-12 h-12 rounded-2xl bg-sky-500 text-white font-extrabold text-base flex items-center justify-center shadow-md">
+          GR
+        </div>
+        <div>
+          <h2 id="postcardTitle" class="font-bubble text-2xl sm:text-3xl text-slate-800 leading-tight">Welcome to Greece!</h2>
+          <p id="postcardSubtitle" class="text-xs sm:text-sm font-semibold text-sky-600">Papi and Abuela's Vacation</p>
+        </div>
+      </div>
+
+      <!-- Narrative Text -->
+      <p id="postcardStory" class="text-sm sm:text-base text-slate-700 leading-relaxed bg-sky-50 rounded-2xl p-4 border border-sky-100 mb-5">
+        Papi and Abuela are having a wonderful time in sunny Greece. Papi and Abuela will come back and bring presents in a few days!
+      </p>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-col sm:flex-row gap-2.5">
+        <button id="seePhotosBtn" onclick="openGalleryForCurrentDestination()" class="flex-1 py-3 px-4 bg-sky-100 hover:bg-sky-200 text-sky-900 rounded-2xl font-bold text-sm shadow-sm transition active:scale-95 flex items-center justify-center gap-2">
+          <svg class="w-4 h-4 text-sky-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span id="seePhotosLabel">See Pictures</span>
+        </button>
+
+        <button onclick="readPostcardAloud()" class="py-3 px-4 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-2xl font-bold text-sm shadow-sm transition active:scale-95 flex items-center justify-center gap-1.5">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 100-6 3 3 0 000 6z" />
+          </svg>
+          <span>Read to Me</span>
+        </button>
+
+        <button onclick="closePostcard(); restoreAllDestinations();" class="py-3 px-4 bg-sky-600 hover:bg-sky-700 text-white rounded-2xl font-bold text-sm shadow-md transition active:scale-95">
+          Fly Somewhere Else!
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Gallery Modal -->
+  <div id="galleryModal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+      <!-- Gallery Header -->
+      <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+        <div>
+          <h3 id="galleryTitle" class="font-bubble text-xl sm:text-2xl text-slate-800">Pictures of Greece</h3>
+          <p id="gallerySubtitle" class="text-xs text-sky-600 font-semibold">Real photos to explore with Sophia</p>
+        </div>
+        <button onclick="closeGallery()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-lg active:scale-90 transition">
+          &times;
+        </button>
+      </div>
+
+      <!-- Photo Stream -->
+      <div id="galleryGrid" class="p-4 sm:p-6 overflow-y-auto no-scrollbar grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Gallery Footer -->
+      <div class="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+        <button onclick="closeGallery()" class="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition">
+          Back to Map
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* Destination definitions & family records */
+    const DESTINATIONS = {
+      canada: {
+        id: 'canada',
+        name: 'Canada',
+        badge: 'CA',
+        city: 'Toronto',
+        coords: [-79.3832, 43.6532], // [lon, lat]
+        color: '#ef4444',
+        subtitle: 'Where Sophia lives and plays!',
+        departureText: "Captain Sophia is getting ready at home in Canada! Fasten your seatbelts!",
+        landingText: "Look, Sophia! We are landing in Canada!",
+        story: "Canada is home sweet home! This is where Sophia lives, plays, and takes off on all her airplane adventures with Captain Sophia at the controls!",
+        photos: [
+          {
+            title: "Toronto Skyline & CN Tower",
+            desc: "The big city of Toronto and Lake Ontario.",
+            url: "https://images.unsplash.com/photo-1507992781348-310259076fa2?auto=format&fit=crop&w=800&q=80"
+          },
+          {
+            title: "Canada's Beautiful Nature",
+            desc: "Fluffy green trees, blue lakes, and friendly animals.",
+            url: "https://images.unsplash.com/photo-1503614472-8c93d56e92ce?auto=format&fit=crop&w=800&q=80"
+          }
+        ]
+      },
+      greece: {
+        id: 'greece',
+        name: 'Greece',
+        badge: 'GR',
+        city: 'Athens',
+        coords: [23.7275, 37.9838],
+        color: '#0284c7',
+        subtitle: "Papi and Abuela's Vacation!",
+        departureText: "Captain Sophia is getting ready to fly Papi and Abuela from Canada all the way across the ocean to sunny Greece! Fasten your seatbelts, here we go!",
+        landingText: "Look, Sophia! We are landing in Greece!",
+        story: "Hooray! Papi and Abuela arrived in sunny Greece for their vacation! The sun is shining bright over the blue sea and white houses. Papi and Abuela will come back and bring presents in a few days!",
+        photos: [
+          {
+            title: "Santorini's Blue Domes",
+            desc: "Famous white houses and blue rooftops overlooking the Mediterranean sea in Greece.",
+            url: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=800&q=80"
+          },
+          {
+            title: "Sunny Greek Island Waters",
+            desc: "Clear turquoise waters and sunny beaches where Papi and Abuela are visiting.",
+            url: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=800&q=80"
+          }
+        ]
+      },
+      uruguay: {
+        id: 'uruguay',
+        name: 'Uruguay',
+        badge: 'UY',
+        city: 'Montevideo',
+        coords: [-56.1645, -34.9011],
+        color: '#eab308',
+        subtitle: 'Where Tía Carmen lives & Peñarol is champion!',
+        departureText: "Captain Sophia is getting ready to fly from Canada all the way south to Uruguay! Fasten your seatbelts!",
+        landingText: "Look, Sophia! We are landing in Uruguay!",
+        story: "Gol! Captain Sophia flew all the way to Uruguay! This is where dear Tía Carmen lives. Papi and Abuela were born here, and Daddy's family is from here too! And remember Sophia: Peñarol in yellow and black is the best soccer team in Uruguay and the best football team in the whole wide world! Let's drink warm mate and give Tía Carmen a giant hug!",
+        photos: [
+          {
+            title: "Traditional Warm Mate",
+            desc: "The famous warm herbal drink shared with love in Uruguay.",
+            url: "https://images.unsplash.com/photo-1596704017254-9b121068fb31?auto=format&fit=crop&w=800&q=80"
+          },
+          {
+            title: "Uruguay Soccer & Peñarol",
+            desc: "Soccer passion in Uruguay, home of the legendary yellow and black Peñarol!",
+            url: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80"
+          },
+          {
+            title: "Montevideo Waterfront & Rambla",
+            desc: "Families walking by the river and coastline on sunny afternoons.",
+            url: "https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?auto=format&fit=crop&w=800&q=80"
+          },
+          {
+            title: "The Green Countryside (El Campo)",
+            desc: "Peaceful green hills, horses, and open blue skies.",
+            url: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80"
+          }
+        ]
+      },
+      dallas: {
+        id: 'dallas',
+        name: 'Texas',
+        badge: 'TX',
+        city: 'Dallas',
+        coords: [-96.7970, 32.7767],
+        color: '#f97316',
+        subtitle: 'Where Nana Abu and family live!',
+        departureText: "Captain Sophia is flying from Canada to Texas to visit Nana Abu and family! Fasten your seatbelts!",
+        landingText: "Look, Sophia! We are landing in Texas!",
+        story: "Yee-haw! Captain Sophia has landed in sunny Texas! This is where Nana Abu and family live! Let's give Nana Abu and family the biggest warm hug ever!",
+        photos: [
+          {
+            title: "Dallas Skyline & Reunion Tower",
+            desc: "The tall buildings and glowing dome ball in downtown Dallas, Texas.",
+            url: "https://images.unsplash.com/photo-1545193544-312983719627?auto=format&fit=crop&w=800&q=80"
+          },
+          {
+            title: "Sunny Texas Skies",
+            desc: "Big bright blue skies and warm sunshine where Nana Abu and family live.",
+            url: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80"
+          }
+        ]
+      },
+      pakistan: {
+        id: 'pakistan',
+        name: 'Pakistan',
+        badge: 'PK',
+        city: 'Islamabad',
+        coords: [73.0479, 33.6844],
+        color: '#10b981',
+        subtitle: 'Where Mommy was born!',
+        departureText: "Captain Sophia is getting ready to fly from Canada across the globe to Pakistan! Fasten your seatbelts!",
+        landingText: "Look, Sophia! We are landing in Pakistan!",
+        story: "Welcome to Pakistan! This is the beautiful country where Mommy was born, with snowy giant mountain peaks, sweet juicy mangoes, and vibrant art!",
+        photos: [
+          {
+            title: "Giant Karakoram Mountains",
+            desc: "Some of the highest, most majestic snow-capped mountains in the world.",
+            url: "https://images.unsplash.com/photo-1586016413664-864c0dd76f53?auto=format&fit=crop&w=800&q=80"
+          },
+          {
+            title: "Faisal Mosque & Margalla Hills",
+            desc: "The famous architectural landmark in Islamabad, Pakistan.",
+            url: "https://images.unsplash.com/photo-1627894483216-2138af692e32?auto=format&fit=crop&w=800&q=80"
+          }
+        ]
+      }
+    };
+
+    /* Audio Synthesis - Gentle Whoosh & Musical Hum (No Harsh Buzz) */
+    let audioCtx = null;
+    let voiceEnabled = true;
+    let cachedVoice = null;
+    let currentActiveFlightDestination = null;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) {
+          audioCtx = new AudioContextClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // Pre-cache consistent, natural, pleasant voice
+    function loadVoices() {
+      if (!('speechSynthesis' in window)) return;
+      const voices = window.speechSynthesis.getVoices();
+      if (!voices || voices.length === 0) return;
+
+      // Prioritize pleasant, warm female or natural English voices
+      const preferred = voices.find(v => 
+        (v.name.includes("Samantha") || v.name.includes("Natural") || v.name.includes("Victoria") || v.name.includes("Google US English") || v.name.includes("Karen")) && v.lang.startsWith("en")
+      );
+      cachedVoice = preferred || voices.find(v => v.lang.startsWith("en")) || voices[0];
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+      loadVoices();
+    }
+
+    function speakText(text, onComplete) {
+      if (!voiceEnabled || !('speechSynthesis' in window)) {
+        if (onComplete) onComplete();
+        return;
+      }
+      window.speechSynthesis.cancel();
+      loadVoices();
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      if (cachedVoice) utterance.voice = cachedVoice;
+      utterance.pitch = 1.05; // Gentle, clear, natural tone
+      utterance.rate = 0.95;  // Friendly, unhurried pace for a toddler
+
+      utterance.onend = () => { if (onComplete) onComplete(); };
+      utterance.onerror = () => { if (onComplete) onComplete(); };
+
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function toggleVoice() {
+      voiceEnabled = !voiceEnabled;
+      const label = document.getElementById('voiceLabel');
+      const icon = document.getElementById('voiceIconOn');
+      if (voiceEnabled) {
+        label.innerText = 'Voice: On';
+        icon.classList.remove('text-slate-400');
+        icon.classList.add('text-emerald-600');
+        speakText("Voice is on!");
+      } else {
+        label.innerText = 'Voice: Off';
+        icon.classList.remove('text-emerald-600');
+        icon.classList.add('text-slate-400');
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    /* Pleasant Sound Effects using Web Audio API */
+    function playGentleWhooshSound(durationSec = 3.5) {
+      initAudioContext();
+      if (!audioCtx) return;
+
+      const now = audioCtx.currentTime;
+
+      // 1. Filtered aerodynamic pink/white noise puff (whoosh)
+      const bufferSize = audioCtx.sampleRate * durationSec;
+      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      let lastOut = 0.0;
+      for (let i = 0; i < bufferSize; i++) {
+        const white = Math.random() * 2 - 1;
+        output[i] = (lastOut + (0.02 * white)) / 1.02; // gentle pink noise integration
+        lastOut = output[i];
+        output[i] *= 3.5;
+      }
+
+      const whiteNoise = audioCtx.createBufferSource();
+      whiteNoise.buffer = noiseBuffer;
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(450, now);
+      filter.frequency.exponentialRampToValueAtTime(700, now + durationSec * 0.5);
+      filter.frequency.exponentialRampToValueAtTime(350, now + durationSec);
+      filter.Q.setValueAtTime(1.8, now);
+
+      const noiseGain = audioCtx.createGain();
+      noiseGain.gain.setValueAtTime(0.001, now);
+      noiseGain.gain.linearRampToValueAtTime(0.08, now + 0.5);
+      noiseGain.gain.linearRampToValueAtTime(0.08, now + durationSec - 0.7);
+      noiseGain.gain.linearRampToValueAtTime(0.001, now + durationSec);
+
+      whiteNoise.connect(filter);
+      filter.connect(noiseGain);
+      noiseGain.connect(audioCtx.destination);
+      whiteNoise.start(now);
+      whiteNoise.stop(now + durationSec);
+
+      // 2. Soft musical low hum (sine wave at 146Hz, note D3)
+      const humOsc = audioCtx.createOscillator();
+      humOsc.type = 'sine';
+      humOsc.frequency.setValueAtTime(146, now);
+      humOsc.frequency.linearRampToValueAtTime(160, now + durationSec * 0.5);
+      humOsc.frequency.linearRampToValueAtTime(140, now + durationSec);
+
+      const humGain = audioCtx.createGain();
+      humGain.gain.setValueAtTime(0.001, now);
+      humGain.gain.linearRampToValueAtTime(0.035, now + 0.4);
+      humGain.gain.linearRampToValueAtTime(0.035, now + durationSec - 0.5);
+      humGain.gain.linearRampToValueAtTime(0.001, now + durationSec);
+
+      humOsc.connect(humGain);
+      humGain.connect(audioCtx.destination);
+      humOsc.start(now);
+      humOsc.stop(now + durationSec);
+    }
+
+    function playCelebrationFanfare() {
+      initAudioContext();
+      if (!audioCtx) return;
+
+      const now = audioCtx.currentTime;
+      // Arpeggio notes: C5, E5, G5, C6
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((freq, idx) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+
+        gain.gain.setValueAtTime(0.001, now + idx * 0.12);
+        gain.gain.linearRampToValueAtTime(0.08, now + idx * 0.12 + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.12 + 0.6);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now + idx * 0.12);
+        osc.stop(now + idx * 0.12 + 0.65);
+      });
+    }
+
+    function playGentleChime() {
+      initAudioContext();
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, now);
+      gain.gain.setValueAtTime(0.06, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.4);
+    }
+  </script>
+
+  <script>
+    let svg, gGlobe, gLand, gGraticule, gFlight, gSmoke, gPins, gAirplane;
+    let projection, pathGenerator;
+    let width = 960, height = 540;
+    let zoomBehavior;
+    let currentTransform = d3.zoomIdentity;
+    let isFlying = false;
+    let worldGeoData = null;
+
+    function initMap() {
+      const container = document.getElementById('worldMapSvg').parentElement;
+      width = container.clientWidth || 960;
+      height = container.clientHeight || 540;
+
+      svg = d3.select("#worldMapSvg")
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("preserveAspectRatio", "xMidYMid meet");
+
+      svg.selectAll("*").remove();
+
+      // Base globe projection: Natural Earth, scaled for toddler geography exploration
+      projection = d3.geoNaturalEarth1()
+        .scale(230)
+        .translate([width / 2, height / 2 + 10]);
+
+      pathGenerator = d3.geoPath().projection(projection);
+
+      // Master Zoomable Group
+      gGlobe = svg.append("g").attr("id", "globeZoomGroup");
+
+      // Ocean Background Sphere
+      gGlobe.append("path")
+        .datum({ type: "Sphere" })
+        .attr("class", "ocean-bg")
+        .attr("d", pathGenerator)
+        .on("click", () => {
+          if (isFlying) return;
+          speakText("Look at the big blue ocean! Splish splash!");
+        });
+
+      // Graticule Lines (Latitude & Longitude)
+      const graticule = d3.geoGraticule10();
+      gGraticule = gGlobe.append("path")
+        .datum(graticule)
+        .attr("class", "graticule")
+        .attr("d", pathGenerator);
+
+      // Continent and Country Landmasses
+      gLand = gGlobe.append("g").attr("id", "landGroup");
+
+      // Flight Trails and Smoke Groups
+      gFlight = gGlobe.append("g").attr("id", "flightPathGroup");
+      gSmoke = gGlobe.append("g").attr("id", "smokeTrailGroup");
+
+      // Destination Pins
+      gPins = gGlobe.append("g").attr("id", "pinsGroup");
+
+      // Airplane Container
+      gAirplane = gGlobe.append("g").attr("id", "airplaneContainer").style("display", "none");
+      renderAirplaneIcon(gAirplane);
+
+      // Setup D3 Zoom & Pan
+      zoomBehavior = d3.zoom()
+        .scaleExtent([0.8, 6.0])
+        .on("zoom", (event) => {
+          currentTransform = event.transform;
+          gGlobe.attr("transform", currentTransform);
+        });
+
+      svg.call(zoomBehavior);
+
+      // Fetch or Fallback Real World Geo Data
+      loadWorldData();
+    }
+
+    function loadWorldData() {
+      d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
+        .then(world => {
+          worldGeoData = world;
+          const countries = topojson.feature(world, world.objects.countries).features;
+          renderCountries(countries);
+          renderFamilyPins();
+        })
+        .catch(err => {
+          console.warn("Using offline geometric fallback for landmasses", err);
+          // Fallback simple shapes if offline
+          const fallbackFeatures = [
+            { type: "Feature", properties: { name: "North America" }, geometry: { type: "Polygon", coordinates: [[[-130,50], [-60,50], [-70,25], [-110,25], [-130,50]]] } },
+            { type: "Feature", properties: { name: "South America" }, geometry: { type: "Polygon", coordinates: [[[-80,10], [-35,-5], [-55,-55], [-75,-20], [-80,10]]] } },
+            { type: "Feature", properties: { name: "Europe" }, geometry: { type: "Polygon", coordinates: [[[-10,35], [30,35], [30,65], [-10,65], [-10,35]]] } },
+            { type: "Feature", properties: { name: "Africa" }, geometry: { type: "Polygon", coordinates: [[[-15,35], [50,30], [35,-35], [10,-35], [-15,35]]] } },
+            { type: "Feature", properties: { name: "Asia" }, geometry: { type: "Polygon", coordinates: [[[30,35], [130,35], [130,70], [30,70], [30,35]]] } },
+            { type: "Feature", properties: { name: "Australia" }, geometry: { type: "Polygon", coordinates: [[[115,-15], [150,-15], [145,-40], [115,-35], [115,-15]]] } }
+          ];
+          renderCountries(fallbackFeatures);
+          renderFamilyPins();
+        });
+    }
+
+    function renderCountries(features) {
+      gLand.selectAll("path.land-mass")
+        .data(features)
+        .enter()
+        .append("path")
+        .attr("class", "land-mass")
+        .attr("d", pathGenerator)
+        .on("click", function(event, d) {
+          event.stopPropagation();
+          if (isFlying) return;
+
+          const countryName = d.properties ? (d.properties.name || "this country") : "this country";
+          playGentleChime();
+          
+          // Flash selection
+          gLand.selectAll(".land-mass").classed("land-selected", false);
+          d3.select(this).classed("land-selected", true);
+
+          // Announce country
+          speakText(`That is ${countryName}! Ready to fly to ${countryName}?`);
+
+          // Show country banner
+          showCountryBanner(countryName, d3.geoCentroid(d));
+        });
+    }
+
+    function showCountryBanner(name, coords) {
+      const banner = document.getElementById('countryBanner');
+      const title = document.getElementById('countryBannerTitle');
+      const subtitle = document.getElementById('countryBannerSubtitle');
+      const badge = document.getElementById('countryBadgeCode');
+      const btn = document.getElementById('bannerFlyActionBtn');
+
+      title.innerText = name;
+      subtitle.innerText = "Tap below to take off from Canada!";
+      badge.innerText = name.substring(0, 2).toUpperCase();
+
+      banner.classList.remove('hidden');
+      banner.classList.add('flex');
+
+      btn.onclick = () => {
+        banner.classList.add('hidden');
+        banner.classList.remove('flex');
+        flyToCustomCountry(name, coords);
+      };
+    }
+
+    /* Render Stationary Family Destination Badges */
+    function renderFamilyPins() {
+      gPins.selectAll("*").remove();
+
+      Object.values(DESTINATIONS).forEach(dest => {
+        const pt = projection(dest.coords);
+        if (!pt) return;
+
+        const pinGroup = gPins.append("g")
+          .attr("id", `pin-${dest.id}`)
+          .attr("class", "cursor-pointer")
+          .attr("transform", `translate(${pt[0]}, ${pt[1]})`)
+          .on("click", (event) => {
+            event.stopPropagation();
+            if (isFlying) return;
+            flyTo(dest.id);
+          });
+
+        // Crisp Pin Badge Circle (No shifting or drifting animations)
+        pinGroup.append("circle")
+          .attr("r", 15)
+          .attr("fill", dest.color)
+          .attr("stroke", "#ffffff")
+          .attr("stroke-width", 2.5)
+          .attr("filter", "drop-shadow(0px 2px 4px rgba(0,0,0,0.25))");
+
+        // Two-letter country code badge
+        pinGroup.append("text")
+          .attr("text-anchor", "middle")
+          .attr("dy", "0.35em")
+          .attr("fill", "#ffffff")
+          .attr("font-family", "Outfit, sans-serif")
+          .attr("font-weight", "800")
+          .attr("font-size", "11px")
+          .text(dest.badge);
+      });
+    }
+
+    /* Cartoon Airplane with Captain Sophia in Cockpit (scale 0.38) */
+    function renderAirplaneIcon(container) {
+      container.selectAll("*").remove();
+
+      const inner = container.append("g")
+        .attr("transform", "scale(0.38) translate(-60, -35)");
+
+      // Airplane fuselage body
+      inner.append("path")
+        .attr("d", "M 10 35 Q 20 20 60 22 L 95 24 Q 115 28 118 35 Q 115 42 95 46 L 60 48 Q 20 50 10 35 Z")
+        .attr("fill", "#ffffff")
+        .attr("stroke", "#0284c7")
+        .attr("stroke-width", "3.5");
+
+      // Jet engines under wing
+      inner.append("rect")
+        .attr("x", "48")
+        .attr("y", "46")
+        .attr("width", "22")
+        .attr("height", "8")
+        .attr("rx", "4")
+        .attr("fill", "#38bdf8")
+        .attr("stroke", "#0284c7")
+        .attr("stroke-width", "2");
+
+      // Tail fin
+      inner.append("path")
+        .attr("d", "M 15 28 L 2 5 L 24 5 L 35 25 Z")
+        .attr("fill", "#ef4444")
+        .attr("stroke", "#b91c1c")
+        .attr("stroke-width", "2.5");
+
+      // Wings
+      inner.append("path")
+        .attr("d", "M 48 30 L 72 2 L 92 2 L 68 30 Z")
+        .attr("fill", "#38bdf8")
+        .attr("stroke", "#0284c7")
+        .attr("stroke-width", "2.5");
+
+      // Cockpit Window
+      inner.append("path")
+        .attr("d", "M 92 26 Q 106 28 108 34 L 88 34 Q 88 28 92 26 Z")
+        .attr("fill", "#0284c7");
+
+      // Captain Sophia in cockpit
+      inner.append("circle")
+        .attr("cx", "98")
+        .attr("cy", "31")
+        .attr("r", "5.5")
+        .attr("fill", "#fed7aa"); // face
+
+      inner.append("circle")
+        .attr("cx", "98")
+        .attr("cy", "28")
+        .attr("r", "5")
+        .attr("fill", "#78350f"); // cute hair
+    }
+  </script>
+
+  <script>
+    /* Flight Controller */
+    function flyTo(destKey) {
+      if (isFlying) return;
+      const destination = DESTINATIONS[destKey];
+      if (!destination) return;
+
+      currentActiveFlightDestination = destination;
+      executeFlightJourney(destination);
+    }
+
+    function flyToCustomCountry(countryName, coords) {
+      if (isFlying) return;
+
+      const customDest = {
+        id: 'custom-' + countryName.toLowerCase().replace(/\s+/g, '-'),
+        name: countryName,
+        badge: countryName.substring(0, 2).toUpperCase(),
+        coords: coords,
+        color: '#10b981',
+        subtitle: `Captain Sophia's World Tour!`,
+        departureText: `Captain Sophia is getting ready to fly from Canada all the way to ${countryName}! Fasten your seatbelts!`,
+        landingText: `Look, Sophia! We are landing in ${countryName}!`,
+        story: `Hooray! Captain Sophia flew across oceans and continents to visit ${countryName}! There are so many wonderful new sights and friendly faces to discover here!`,
+        photos: [
+          {
+            title: `Exploring ${countryName}`,
+            desc: `Real photography from ${countryName}.`,
+            url: `https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80`
+          }
+        ]
+      };
+
+      currentActiveFlightDestination = customDest;
+      executeFlightJourney(customDest);
+    }
+
+    function executeFlightJourney(dest) {
+      isFlying = true;
+
+      // 1. Enter Focus Mode: Hide other pins and bottom cards to eliminate clutter
+      enterFocusMode(dest);
+
+      // Update status banner
+      const statusText = document.getElementById('statusText');
+      statusText.innerText = `Captain Sophia is taking off for ${dest.name}!`;
+
+      // 2. Play departure announcement first
+      speakText(dest.departureText, () => {
+        // 3. Camera Zooms smoothly to Canada for takeoff
+        const canadaPt = projection(DESTINATIONS.canada.coords);
+        smoothCameraZoom(canadaPt[0], canadaPt[1], 1.75, 900, () => {
+          // 4. Start Airplane flight with tail smoke and whoosh
+          startAirplaneFlight(DESTINATIONS.canada.coords, dest.coords, () => {
+            // 5. On Arrival: Zoom camera into destination
+            const targetPt = projection(dest.coords);
+            smoothCameraZoom(targetPt[0], targetPt[1], 1.85, 800, () => {
+              onFlightLanded(dest);
+            });
+          });
+        });
+      });
+    }
+
+    function enterFocusMode(activeDest) {
+      // Hide bottom destination selection bar
+      const bar = document.getElementById('destinationBar');
+      bar.classList.add('opacity-0', 'pointer-events-none');
+
+      // Show 'Fly Somewhere Else' button
+      const resetBtn = document.getElementById('resetFlightBtn');
+      resetBtn.classList.remove('hidden');
+
+      // In SVG: Keep only Canada and the chosen destination visible
+      gPins.selectAll("g").style("display", "none");
+      d3.select("#pin-canada").style("display", "block");
+      if (activeDest.id && document.getElementById(`pin-${activeDest.id}`)) {
+        d3.select(`#pin-${activeDest.id}`).style("display", "block");
+      }
+    }
+
+    function restoreAllDestinations() {
+      isFlying = false;
+
+      // Restore bottom bar
+      const bar = document.getElementById('destinationBar');
+      bar.classList.remove('opacity-0', 'pointer-events-none');
+
+      // Hide reset button
+      const resetBtn = document.getElementById('resetFlightBtn');
+      resetBtn.classList.add('hidden');
+
+      // Restore all pins
+      renderFamilyPins();
+
+      // Reset camera zoom smoothly to full view
+      resetCameraZoom();
+
+      // Clear flight path, smoke, and airplane
+      gFlight.selectAll("*").remove();
+      gSmoke.selectAll("*").remove();
+      gAirplane.style("display", "none");
+
+      document.getElementById('statusText').innerText = "Captain Sophia is ready at home in Canada!";
+      speakText("Welcome back to Canada! Where should Captain Sophia fly next?");
+    }
+
+    /* Animated Airplane Flight along Great Circle with Synchronized Tail Smoke */
+    function startAirplaneFlight(startCoords, endCoords, onComplete) {
+      gFlight.selectAll("*").remove();
+      gSmoke.selectAll("*").remove();
+
+      // D3 Geo Interpolate creates the true spherical curved flight path
+      const interpolator = d3.geoInterpolate(startCoords, endCoords);
+      const points = [];
+      const numSteps = 70;
+      for (let i = 0; i <= numSteps; i++) {
+        points.push(interpolator(i / numSteps));
+      }
+
+      // Draw flight arc line
+      const geoLine = { type: "LineString", coordinates: points };
+      const pathD = pathGenerator(geoLine);
+
+      const pathElem = gFlight.append("path")
+        .attr("d", pathD)
+        .attr("fill", "none")
+        .attr("stroke", "#ffffff")
+        .attr("stroke-width", 3.5)
+        .attr("class", "flight-path-active")
+        .attr("filter", "drop-shadow(0px 1px 3px rgba(0,0,0,0.3))");
+
+      const totalLength = pathElem.node().getTotalLength();
+
+      // Show airplane
+      gAirplane.style("display", "block");
+
+      // Start gentle whoosh audio
+      playGentleWhooshSound(3.6);
+
+      // Camera gently zooms back out slightly during the long overseas flight
+      setTimeout(() => {
+        smoothCameraZoom(width / 2, height / 2, 1.15, 1200);
+      }, 300);
+
+      // Animate plane along SVG path
+      const flightDuration = 3800; // ms
+      let startTime = null;
+
+      function stepFlight(timestamp) {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / flightDuration, 1.0);
+
+        // Current position along the flight line
+        const currentDist = progress * totalLength;
+        const pt = pathElem.node().getPointAtLength(currentDist);
+
+        // Heading angle (pointing forward in direction of motion)
+        const nextDist = Math.min(currentDist + 2, totalLength);
+        const nextPt = pathElem.node().getPointAtLength(nextDist);
+        const angleDeg = Math.atan2(nextPt.y - pt.y, nextPt.x - pt.x) * (180 / Math.PI);
+
+        // Position Airplane
+        gAirplane.attr("transform", `translate(${pt.x}, ${pt.y}) rotate(${angleDeg})`);
+
+        // Emit Synchronized Tail Smoke (Puffs emerge directly behind airplane's tail)
+        if (Math.random() < 0.45 && progress < 0.96) {
+          spawnTailSmokePuff(pt.x, pt.y, angleDeg);
+        }
+
+        if (progress < 1.0) {
+          requestAnimationFrame(stepFlight);
+        } else {
+          // Touchdown!
+          gAirplane.style("display", "none");
+          if (onComplete) onComplete();
+        }
+      }
+
+      requestAnimationFrame(stepFlight);
+    }
+
+    /* Soft Tail Smoke Puff in sync with Airplane's Tail */
+    function spawnTailSmokePuff(planeX, planeY, headingAngleDeg) {
+      // Airplane scale is 0.38. Tail is approx 24px behind plane center.
+      const rad = (headingAngleDeg + 180) * (Math.PI / 180);
+      const tailOffset = 22;
+      const smokeX = planeX + Math.cos(rad) * tailOffset + (Math.random() * 4 - 2);
+      const smokeY = planeY + Math.sin(rad) * tailOffset + (Math.random() * 4 - 2);
+
+      const puff = gSmoke.append("circle")
+        .attr("cx", smokeX)
+        .attr("cy", smokeY)
+        .attr("r", 2.5)
+        .attr("fill", "#ffffff")
+        .attr("opacity", 0.75);
+
+      puff.transition()
+        .duration(850)
+        .ease(d3.easeQuadOut)
+        .attr("r", 9 + Math.random() * 4)
+        .attr("opacity", 0)
+        .remove();
+    }
+
+    /* Landing Celebration & Postcard */
+    function onFlightLanded(dest) {
+      // Fanfare and confetti
+      playCelebrationFanfare();
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 45,
+          spread: 70,
+          origin: { y: 0.6 }
+        });
+      }
+
+      // Big Landing Announcement
+      speakText(dest.landingText, () => {
+        // Open postcard modal and read full family story
+        openPostcard(dest);
+      });
+    }
+
+    function openPostcard(dest) {
+      const modal = document.getElementById('postcardModal');
+      const card = document.getElementById('postcardCard');
+      const badge = document.getElementById('postcardBadge');
+      const title = document.getElementById('postcardTitle');
+      const subtitle = document.getElementById('postcardSubtitle');
+      const story = document.getElementById('postcardStory');
+      const photoBtnLabel = document.getElementById('seePhotosLabel');
+
+      badge.innerText = dest.badge;
+      badge.style.backgroundColor = dest.color;
+      title.innerText = `Welcome to ${dest.name}!`;
+      subtitle.innerText = dest.subtitle;
+      story.innerText = dest.story;
+      photoBtnLabel.innerText = dest.id === 'uruguay' ? "See Pictures of Uruguay" : `See Pictures of ${dest.name}`;
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        card.classList.remove('scale-95', 'opacity-0');
+        card.classList.add('scale-100', 'opacity-100');
+      }, 20);
+
+      // Read family story in pleasant voice
+      speakText(dest.story);
+    }
+
+    function closePostcard() {
+      const modal = document.getElementById('postcardModal');
+      const card = document.getElementById('postcardCard');
+      card.classList.add('scale-95', 'opacity-0');
+      card.classList.remove('scale-100', 'opacity-100');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 250);
+    }
+
+    function readPostcardAloud() {
+      if (currentActiveFlightDestination) {
+        speakText(currentActiveFlightDestination.story);
+      }
+    }
+
+    /* Photos Gallery Modal */
+    function openGalleryForCurrentDestination() {
+      if (!currentActiveFlightDestination) return;
+      const dest = currentActiveFlightDestination;
+
+      const galleryModal = document.getElementById('galleryModal');
+      const title = document.getElementById('galleryTitle');
+      const subtitle = document.getElementById('gallerySubtitle');
+      const grid = document.getElementById('galleryGrid');
+
+      title.innerText = `Pictures of ${dest.name}`;
+      subtitle.innerText = `Real photographs for Sophia to explore`;
+      grid.innerHTML = '';
+
+      if (dest.photos && dest.photos.length > 0) {
+        dest.photos.forEach(photo => {
+          const card = document.createElement('div');
+          card.className = "bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 shadow-sm";
+          card.innerHTML = `
+            <div class="h-44 w-full bg-slate-200 overflow-hidden relative">
+              <img src="${photo.url}" alt="${photo.title}" class="w-full h-full object-cover transition duration-300 hover:scale-105" onerror="this.src='https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80'" />
+            </div>
+            <div class="p-3.5">
+              <h4 class="font-bold text-sm text-slate-800">${photo.title}</h4>
+              <p class="text-xs text-slate-600 mt-1 leading-relaxed">${photo.desc}</p>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      }
+
+      galleryModal.classList.remove('hidden');
+    }
+
+    function closeGallery() {
+      document.getElementById('galleryModal').classList.add('hidden');
+    }
+
+    /* Camera Pan & Zoom Helpers */
+    function smoothCameraZoom(targetX, targetY, targetScale, durationMs = 800, onDone = null) {
+      const transform = d3.zoomIdentity
+        .translate(width / 2, height / 2)
+        .scale(targetScale)
+        .translate(-targetX, -targetY);
+
+      svg.transition()
+        .duration(durationMs)
+        .ease(d3.easeCubicOut)
+        .call(zoomBehavior.transform, transform)
+        .on("end", () => {
+          if (onDone) onDone();
+        });
+    }
+
+    function manualZoom(factor) {
+      svg.transition().duration(300).call(zoomBehavior.scaleBy, factor);
+    }
+
+    function resetCameraZoom() {
+      svg.transition().duration(600).ease(d3.easeCubicOut).call(zoomBehavior.transform, d3.zoomIdentity);
+    }
+
+    // Auto resize listener
+    window.addEventListener('resize', () => {
+      const container = document.getElementById('worldMapSvg').parentElement;
+      width = container.clientWidth || 960;
+      height = container.clientHeight || 540;
+      svg.attr("viewBox", `0 0 ${width} ${height}`);
+      if (projection) {
+        projection.translate([width / 2, height / 2 + 10]);
+        if (worldGeoData) {
+          gLand.selectAll("path.land-mass").attr("d", pathGenerator);
+          renderFamilyPins();
+        }
+      }
+    });
+
+    // Initialize application on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+    });
+  </script>
+</body>
+</html>
