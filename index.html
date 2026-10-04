@@ -86,7 +86,7 @@
       animation: marchFlightPath 1.2s linear infinite;
     }
 
-    /* Custom Scrollbar for photos */
+    /* Custom Scrollbar */
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
@@ -114,7 +114,7 @@
       </div>
     </div>
 
-    <!-- Active Status Banner / What Sophia is Doing -->
+    <!-- Active Status Banner -->
     <div id="statusBanner" class="hidden md:flex items-center bg-sky-50 border border-sky-200 rounded-full px-4 py-1.5 text-sm font-semibold text-sky-800">
       <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 mr-2 animate-ping"></span>
       <span id="statusText">Captain Sophia is ready at home in Canada!</span>
@@ -183,6 +183,7 @@
       </div>
     </div>
 
+    <!-- Quick-Fly Family Bar -->
     <div id="destinationBar" class="mt-3 w-full max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 transition-opacity duration-300">
       
       <!-- Canada (Home) -->
@@ -296,7 +297,7 @@
       <!-- Gallery Header -->
       <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
         <div>
-          <h3 id="galleryTitle" class="font-bubble text-xl sm:text-2xl text-slate-800">Pictures of Greece</h3>
+          <h3 id="galleryTitle" class="font-bubble text-xl sm:text-2xl text-slate-800">Pictures</h3>
           <p id="gallerySubtitle" class="text-xs text-sky-600 font-semibold">Real photos to explore with Sophia</p>
         </div>
         <button onclick="closeGallery()" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-lg active:scale-90 transition">
@@ -304,7 +305,7 @@
         </button>
       </div>
 
-      <!-- Photo Stream -->
+      <!-- Photo Stream / Topics -->
       <div id="galleryGrid" class="p-4 sm:p-6 overflow-y-auto no-scrollbar grid grid-cols-1 sm:grid-cols-2 gap-4">
         <!-- Injected via JavaScript -->
       </div>
@@ -319,14 +320,14 @@
   </div>
 
   <script>
-    /* Destination definitions & family records */
+    /* Family records & curated destinations */
     const DESTINATIONS = {
       canada: {
         id: 'canada',
         name: 'Canada',
         badge: 'CA',
         city: 'Toronto',
-        coords: [-79.3832, 43.6532], // [lon, lat]
+        coords: [-79.3832, 43.6532],
         color: '#ef4444',
         subtitle: 'Where Sophia lives and plays!',
         departureText: "Captain Sophia is getting ready at home in Canada! Fasten your seatbelts!",
@@ -379,22 +380,22 @@
         subtitle: 'Where Tía Carmen lives & Peñarol is champion!',
         departureText: "Captain Sophia is getting ready to fly from Canada all the way south to Uruguay! Fasten your seatbelts!",
         landingText: "Look, Sophia! We are landing in Uruguay!",
-        story: "Gol! Captain Sophia flew all the way to Uruguay! This is where dear Tía Carmen lives. Papi and Abuela were born here, and Daddy's family is from here too! And remember Sophia: Peñarol in yellow and black is the best soccer team in Uruguay and the best football team in the whole wide world! Let's drink warm mate and give Tía Carmen a giant hug!",
+        story: "Captain Sophia flew all the way to Uruguay! This is where dear Tía Carmen lives. Papi and Abuela were born here, and Daddy's family is from here too! And remember Sophia: Peñarol is the best soccer team in Uruguay and the best football team in the whole wide world! Let's eat pizza and give Tía Carmen a giant hug!",
         photos: [
           {
-            title: "Traditional Warm Mate",
-            desc: "The famous warm herbal drink shared with love in Uruguay.",
-            url: "https://images.unsplash.com/photo-1596704017254-9b121068fb31?auto=format&fit=crop&w=800&q=80"
+            title: "Pizza",
+            desc: "The famous pizza from Uruguay.",
+            url: "https://i.redd.it/x2v0hklr08x41.jpg?auto=format&fit=crop&w=800&q=80"
           },
           {
             title: "Uruguay Soccer & Peñarol",
             desc: "Soccer passion in Uruguay, home of the legendary yellow and black Peñarol!",
-            url: "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?auto=format&fit=crop&w=800&q=80"
+            url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQbbNB2_xOjUZM8NXUjL37lflUCWRbMayjnP9PbL37acg&s=10?auto=format&fit=crop&w=800&q=80"
           },
           {
             title: "Montevideo Waterfront & Rambla",
             desc: "Families walking by the river and coastline on sunny afternoons.",
-            url: "https://images.unsplash.com/photo-1598971861713-54ad16a7e72e?auto=format&fit=crop&w=800&q=80"
+            url: "https://www.descubrimontevideo.uy/sites/default/files/styles/escala_y_recorte_1400x800/public/2022-09/DJI_0398.jpg?itok=3jKdMUtf?auto=format&fit=crop&w=800&q=80"
           },
           {
             title: "The Green Countryside (El Campo)",
@@ -453,7 +454,25 @@
       }
     };
 
-    /* Audio Synthesis - Gentle Whoosh & Musical Hum (No Harsh Buzz) */
+    /* Common landmarks for dynamic country discoveries */
+    const COUNTRY_LANDMARKS = {
+      "France": ["Eiffel Tower in Paris", "French Castles in Loire", "Lavender Fields of Provence"],
+      "Italy": ["The Colosseum in Rome", "Venice Canals and Gondolas", "Florence Cathedral"],
+      "United Kingdom": ["Big Ben in London", "Tower Bridge", "Scottish Highlands"],
+      "Spain": ["Sagrada Familia in Barcelona", "Sunny Costa del Sol Beaches", "Historic Madrid"],
+      "Japan": ["Mount Fuji", "Tokyo Skyline", "Kyoto Temples and Gardens"],
+      "Australia": ["Sydney Opera House", "Great Barrier Reef", "Kangaroos in Outback"],
+      "Brazil": ["Christ the Redeemer in Rio", "Amazon Rainforest", "Iguazu Falls"],
+      "Egypt": ["The Great Pyramids of Giza", "Nile River in Cairo", "Sphinx"],
+      "Mexico": ["Ancient Chichen Itza", "Sunny Cancun Beaches", "Historic Mexico City"],
+      "Germany": ["Neuschwanstein Castle", "Brandenburg Gate in Berlin", "Black Forest"],
+      "India": ["The Taj Mahal", "Vibrant Jaipur Palaces", "Himalayan Foothills"],
+      "China": ["The Great Wall of China", "Shanghai Skyline", "Giant Pandas"],
+      "Argentina": ["Buenos Aires Obelisk", "Perito Moreno Glacier", "Iguazu Falls"],
+      "United States": ["Statue of Liberty", "Grand Canyon", "Yellowstone National Park"]
+    };
+
+    /* Audio Synthesis - Gentle Whoosh & Musical Hum */
     let audioCtx = null;
     let voiceEnabled = true;
     let cachedVoice = null;
@@ -471,13 +490,11 @@
       }
     }
 
-    // Pre-cache consistent, natural, pleasant voice
     function loadVoices() {
       if (!('speechSynthesis' in window)) return;
       const voices = window.speechSynthesis.getVoices();
       if (!voices || voices.length === 0) return;
 
-      // Prioritize pleasant, warm female or natural English voices
       const preferred = voices.find(v => 
         (v.name.includes("Samantha") || v.name.includes("Natural") || v.name.includes("Victoria") || v.name.includes("Google US English") || v.name.includes("Karen")) && v.lang.startsWith("en")
       );
@@ -498,8 +515,8 @@
 
       const utterance = new SpeechSynthesisUtterance(text);
       if (cachedVoice) utterance.voice = cachedVoice;
-      utterance.pitch = 1.05; // Gentle, clear, natural tone
-      utterance.rate = 0.95;  // Friendly, unhurried pace for a toddler
+      utterance.pitch = 1.05;
+      utterance.rate = 0.95;
 
       utterance.onend = () => { if (onComplete) onComplete(); };
       utterance.onerror = () => { if (onComplete) onComplete(); };
@@ -524,21 +541,20 @@
       }
     }
 
-    /* Pleasant Sound Effects using Web Audio API */
     function playGentleWhooshSound(durationSec = 3.5) {
       initAudioContext();
       if (!audioCtx) return;
 
       const now = audioCtx.currentTime;
 
-      // 1. Filtered aerodynamic pink/white noise puff (whoosh)
+      // 1. Aerodynamic pink noise puff
       const bufferSize = audioCtx.sampleRate * durationSec;
       const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
       const output = noiseBuffer.getChannelData(0);
       let lastOut = 0.0;
       for (let i = 0; i < bufferSize; i++) {
         const white = Math.random() * 2 - 1;
-        output[i] = (lastOut + (0.02 * white)) / 1.02; // gentle pink noise integration
+        output[i] = (lastOut + (0.02 * white)) / 1.02;
         lastOut = output[i];
         output[i] *= 3.5;
       }
@@ -589,7 +605,6 @@
       if (!audioCtx) return;
 
       const now = audioCtx.currentTime;
-      // Arpeggio notes: C5, E5, G5, C6
       const notes = [523.25, 659.25, 783.99, 1046.50];
       notes.forEach((freq, idx) => {
         const osc = audioCtx.createOscillator();
@@ -645,7 +660,7 @@
 
       svg.selectAll("*").remove();
 
-      // Base globe projection: Natural Earth, scaled for toddler geography exploration
+      // Base globe projection: Natural Earth
       projection = d3.geoNaturalEarth1()
         .scale(230)
         .translate([width / 2, height / 2 + 10]);
@@ -672,14 +687,10 @@
         .attr("class", "graticule")
         .attr("d", pathGenerator);
 
-      // Continent and Country Landmasses
+      // Landmasses & Flights
       gLand = gGlobe.append("g").attr("id", "landGroup");
-
-      // Flight Trails and Smoke Groups
       gFlight = gGlobe.append("g").attr("id", "flightPathGroup");
       gSmoke = gGlobe.append("g").attr("id", "smokeTrailGroup");
-
-      // Destination Pins
       gPins = gGlobe.append("g").attr("id", "pinsGroup");
 
       // Airplane Container
@@ -696,7 +707,6 @@
 
       svg.call(zoomBehavior);
 
-      // Fetch or Fallback Real World Geo Data
       loadWorldData();
     }
 
@@ -710,7 +720,6 @@
         })
         .catch(err => {
           console.warn("Using offline geometric fallback for landmasses", err);
-          // Fallback simple shapes if offline
           const fallbackFeatures = [
             { type: "Feature", properties: { name: "North America" }, geometry: { type: "Polygon", coordinates: [[[-130,50], [-60,50], [-70,25], [-110,25], [-130,50]]] } },
             { type: "Feature", properties: { name: "South America" }, geometry: { type: "Polygon", coordinates: [[[-80,10], [-35,-5], [-55,-55], [-75,-20], [-80,10]]] } },
@@ -738,14 +747,10 @@
           const countryName = d.properties ? (d.properties.name || "this country") : "this country";
           playGentleChime();
           
-          // Flash selection
           gLand.selectAll(".land-mass").classed("land-selected", false);
           d3.select(this).classed("land-selected", true);
 
-          // Announce country
           speakText(`That is ${countryName}! Ready to fly to ${countryName}?`);
-
-          // Show country banner
           showCountryBanner(countryName, d3.geoCentroid(d));
         });
     }
@@ -771,7 +776,6 @@
       };
     }
 
-    /* Render Stationary Family Destination Badges */
     function renderFamilyPins() {
       gPins.selectAll("*").remove();
 
@@ -789,7 +793,6 @@
             flyTo(dest.id);
           });
 
-        // Crisp Pin Badge Circle (No shifting or drifting animations)
         pinGroup.append("circle")
           .attr("r", 15)
           .attr("fill", dest.color)
@@ -797,7 +800,6 @@
           .attr("stroke-width", 2.5)
           .attr("filter", "drop-shadow(0px 2px 4px rgba(0,0,0,0.25))");
 
-        // Two-letter country code badge
         pinGroup.append("text")
           .attr("text-anchor", "middle")
           .attr("dy", "0.35em")
@@ -809,21 +811,18 @@
       });
     }
 
-    /* Cartoon Airplane with Captain Sophia in Cockpit (scale 0.38) */
     function renderAirplaneIcon(container) {
       container.selectAll("*").remove();
 
       const inner = container.append("g")
         .attr("transform", "scale(0.38) translate(-60, -35)");
 
-      // Airplane fuselage body
       inner.append("path")
         .attr("d", "M 10 35 Q 20 20 60 22 L 95 24 Q 115 28 118 35 Q 115 42 95 46 L 60 48 Q 20 50 10 35 Z")
         .attr("fill", "#ffffff")
         .attr("stroke", "#0284c7")
         .attr("stroke-width", "3.5");
 
-      // Jet engines under wing
       inner.append("rect")
         .attr("x", "48")
         .attr("y", "46")
@@ -834,37 +833,33 @@
         .attr("stroke", "#0284c7")
         .attr("stroke-width", "2");
 
-      // Tail fin
       inner.append("path")
         .attr("d", "M 15 28 L 2 5 L 24 5 L 35 25 Z")
         .attr("fill", "#ef4444")
         .attr("stroke", "#b91c1c")
         .attr("stroke-width", "2.5");
 
-      // Wings
       inner.append("path")
         .attr("d", "M 48 30 L 72 2 L 92 2 L 68 30 Z")
         .attr("fill", "#38bdf8")
         .attr("stroke", "#0284c7")
         .attr("stroke-width", "2.5");
 
-      // Cockpit Window
       inner.append("path")
         .attr("d", "M 92 26 Q 106 28 108 34 L 88 34 Q 88 28 92 26 Z")
         .attr("fill", "#0284c7");
 
-      // Captain Sophia in cockpit
       inner.append("circle")
         .attr("cx", "98")
         .attr("cy", "31")
         .attr("r", "5.5")
-        .attr("fill", "#fed7aa"); // face
+        .attr("fill", "#fed7aa");
 
       inner.append("circle")
         .attr("cx", "98")
         .attr("cy", "28")
         .attr("r", "5")
-        .attr("fill", "#78350f"); // cute hair
+        .attr("fill", "#78350f");
     }
   </script>
 
@@ -882,6 +877,13 @@
     function flyToCustomCountry(countryName, coords) {
       if (isFlying) return;
 
+      // Check if country has predefined landmark topics
+      const topics = COUNTRY_LANDMARKS[countryName] || [
+        `Beautiful landscapes of ${countryName}`,
+        `Famous landmarks in ${countryName}`,
+        `Nature and wildlife of ${countryName}`
+      ];
+
       const customDest = {
         id: 'custom-' + countryName.toLowerCase().replace(/\s+/g, '-'),
         name: countryName,
@@ -892,13 +894,8 @@
         departureText: `Captain Sophia is getting ready to fly from Canada all the way to ${countryName}! Fasten your seatbelts!`,
         landingText: `Look, Sophia! We are landing in ${countryName}!`,
         story: `Hooray! Captain Sophia flew across oceans and continents to visit ${countryName}! There are so many wonderful new sights and friendly faces to discover here!`,
-        photos: [
-          {
-            title: `Exploring ${countryName}`,
-            desc: `Real photography from ${countryName}.`,
-            url: `https://images.unsplash.com/photo-1488646953014-85cb44e25828?auto=format&fit=crop&w=800&q=80`
-          }
-        ]
+        isCustom: true,
+        topics: topics
       };
 
       currentActiveFlightDestination = customDest;
@@ -908,21 +905,21 @@
     function executeFlightJourney(dest) {
       isFlying = true;
 
-      // 1. Enter Focus Mode: Hide other pins and bottom cards to eliminate clutter
+      // 1. Enter Focus Mode
       enterFocusMode(dest);
 
       // Update status banner
       const statusText = document.getElementById('statusText');
       statusText.innerText = `Captain Sophia is taking off for ${dest.name}!`;
 
-      // 2. Play departure announcement first
+      // 2. Departure announcement
       speakText(dest.departureText, () => {
-        // 3. Camera Zooms smoothly to Canada for takeoff
+        // 3. Zoom into Canada
         const canadaPt = projection(DESTINATIONS.canada.coords);
         smoothCameraZoom(canadaPt[0], canadaPt[1], 1.75, 900, () => {
-          // 4. Start Airplane flight with tail smoke and whoosh
+          // 4. Start flight
           startAirplaneFlight(DESTINATIONS.canada.coords, dest.coords, () => {
-            // 5. On Arrival: Zoom camera into destination
+            // 5. Zoom into destination
             const targetPt = projection(dest.coords);
             smoothCameraZoom(targetPt[0], targetPt[1], 1.85, 800, () => {
               onFlightLanded(dest);
@@ -933,15 +930,12 @@
     }
 
     function enterFocusMode(activeDest) {
-      // Hide bottom destination selection bar
       const bar = document.getElementById('destinationBar');
       bar.classList.add('opacity-0', 'pointer-events-none');
 
-      // Show 'Fly Somewhere Else' button
       const resetBtn = document.getElementById('resetFlightBtn');
       resetBtn.classList.remove('hidden');
 
-      // In SVG: Keep only Canada and the chosen destination visible
       gPins.selectAll("g").style("display", "none");
       d3.select("#pin-canada").style("display", "block");
       if (activeDest.id && document.getElementById(`pin-${activeDest.id}`)) {
@@ -952,21 +946,15 @@
     function restoreAllDestinations() {
       isFlying = false;
 
-      // Restore bottom bar
       const bar = document.getElementById('destinationBar');
       bar.classList.remove('opacity-0', 'pointer-events-none');
 
-      // Hide reset button
       const resetBtn = document.getElementById('resetFlightBtn');
       resetBtn.classList.add('hidden');
 
-      // Restore all pins
       renderFamilyPins();
-
-      // Reset camera zoom smoothly to full view
       resetCameraZoom();
 
-      // Clear flight path, smoke, and airplane
       gFlight.selectAll("*").remove();
       gSmoke.selectAll("*").remove();
       gAirplane.style("display", "none");
@@ -975,12 +963,10 @@
       speakText("Welcome back to Canada! Where should Captain Sophia fly next?");
     }
 
-    /* Animated Airplane Flight along Great Circle with Synchronized Tail Smoke */
     function startAirplaneFlight(startCoords, endCoords, onComplete) {
       gFlight.selectAll("*").remove();
       gSmoke.selectAll("*").remove();
 
-      // D3 Geo Interpolate creates the true spherical curved flight path
       const interpolator = d3.geoInterpolate(startCoords, endCoords);
       const points = [];
       const numSteps = 70;
@@ -988,7 +974,6 @@
         points.push(interpolator(i / numSteps));
       }
 
-      // Draw flight arc line
       const geoLine = { type: "LineString", coordinates: points };
       const pathD = pathGenerator(geoLine);
 
@@ -1002,38 +987,29 @@
 
       const totalLength = pathElem.node().getTotalLength();
 
-      // Show airplane
       gAirplane.style("display", "block");
-
-      // Start gentle whoosh audio
       playGentleWhooshSound(3.6);
 
-      // Camera gently zooms back out slightly during the long overseas flight
       setTimeout(() => {
         smoothCameraZoom(width / 2, height / 2, 1.15, 1200);
       }, 300);
 
-      // Animate plane along SVG path
-      const flightDuration = 3800; // ms
+      const flightDuration = 3800;
       let startTime = null;
 
       function stepFlight(timestamp) {
         if (!startTime) startTime = timestamp;
         const progress = Math.min((timestamp - startTime) / flightDuration, 1.0);
 
-        // Current position along the flight line
         const currentDist = progress * totalLength;
         const pt = pathElem.node().getPointAtLength(currentDist);
 
-        // Heading angle (pointing forward in direction of motion)
         const nextDist = Math.min(currentDist + 2, totalLength);
         const nextPt = pathElem.node().getPointAtLength(nextDist);
         const angleDeg = Math.atan2(nextPt.y - pt.y, nextPt.x - pt.x) * (180 / Math.PI);
 
-        // Position Airplane
         gAirplane.attr("transform", `translate(${pt.x}, ${pt.y}) rotate(${angleDeg})`);
 
-        // Emit Synchronized Tail Smoke (Puffs emerge directly behind airplane's tail)
         if (Math.random() < 0.45 && progress < 0.96) {
           spawnTailSmokePuff(pt.x, pt.y, angleDeg);
         }
@@ -1041,7 +1017,6 @@
         if (progress < 1.0) {
           requestAnimationFrame(stepFlight);
         } else {
-          // Touchdown!
           gAirplane.style("display", "none");
           if (onComplete) onComplete();
         }
@@ -1050,9 +1025,7 @@
       requestAnimationFrame(stepFlight);
     }
 
-    /* Soft Tail Smoke Puff in sync with Airplane's Tail */
     function spawnTailSmokePuff(planeX, planeY, headingAngleDeg) {
-      // Airplane scale is 0.38. Tail is approx 24px behind plane center.
       const rad = (headingAngleDeg + 180) * (Math.PI / 180);
       const tailOffset = 22;
       const smokeX = planeX + Math.cos(rad) * tailOffset + (Math.random() * 4 - 2);
@@ -1073,9 +1046,7 @@
         .remove();
     }
 
-    /* Landing Celebration & Postcard */
     function onFlightLanded(dest) {
-      // Fanfare and confetti
       playCelebrationFanfare();
       if (typeof confetti === 'function') {
         confetti({
@@ -1085,9 +1056,7 @@
         });
       }
 
-      // Big Landing Announcement
       speakText(dest.landingText, () => {
-        // Open postcard modal and read full family story
         openPostcard(dest);
       });
     }
@@ -1114,7 +1083,6 @@
         card.classList.add('scale-100', 'opacity-100');
       }, 20);
 
-      // Read family story in pleasant voice
       speakText(dest.story);
     }
 
@@ -1134,7 +1102,7 @@
       }
     }
 
-    /* Photos Gallery Modal */
+    /* Photos & Exploration Gallery Modal */
     function openGalleryForCurrentDestination() {
       if (!currentActiveFlightDestination) return;
       const dest = currentActiveFlightDestination;
@@ -1148,7 +1116,35 @@
       subtitle.innerText = `Real photographs for Sophia to explore`;
       grid.innerHTML = '';
 
-      if (dest.photos && dest.photos.length > 0) {
+      if (dest.isCustom) {
+        // Dynamic search cards for custom-explored countries
+        dest.topics.forEach(topic => {
+          const card = document.createElement('div');
+          card.className = "bg-sky-50 rounded-2xl p-5 border border-sky-200 flex flex-col justify-between shadow-sm";
+          
+          const searchUrl = `https://commons.wikimedia.org/w/index.php?search=${encodeURIComponent(topic)}&title=Special:MediaSearch&type=image`;
+          
+          card.innerHTML = `
+            <div>
+              <div class="w-10 h-10 rounded-xl bg-sky-200 text-sky-800 font-bold flex items-center justify-center mb-3">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h4 class="font-bold text-base text-slate-800">${topic}</h4>
+              <p class="text-xs text-slate-600 mt-1">Tap below to view real educational photos of ${dest.name} on Wikimedia Commons.</p>
+            </div>
+            <a href="${searchUrl}" target="_blank" rel="noopener noreferrer" class="mt-4 inline-flex items-center justify-center gap-1.5 py-2.5 px-4 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-bold shadow transition active:scale-95">
+              <span>View Photos</span>
+              <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
+          `;
+          grid.appendChild(card);
+        });
+      } else if (dest.photos && dest.photos.length > 0) {
+        // Curated photography for default family destinations
         dest.photos.forEach(photo => {
           const card = document.createElement('div');
           card.className = "bg-slate-50 rounded-2xl overflow-hidden border border-slate-200 shadow-sm";
@@ -1196,7 +1192,6 @@
       svg.transition().duration(600).ease(d3.easeCubicOut).call(zoomBehavior.transform, d3.zoomIdentity);
     }
 
-    // Auto resize listener
     window.addEventListener('resize', () => {
       const container = document.getElementById('worldMapSvg').parentElement;
       width = container.clientWidth || 960;
@@ -1211,7 +1206,6 @@
       }
     });
 
-    // Initialize application on page load
     window.addEventListener('DOMContentLoaded', () => {
       initMap();
     });
